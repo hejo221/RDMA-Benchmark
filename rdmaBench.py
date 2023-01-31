@@ -1,3 +1,9 @@
+#                                                               #
+# This tool uses the Perftest package to perform the benchmarks #
+#   For more information, see github.com/linux-rdma/perftest    #
+#                                                               #
+
+
 import os
 import time
 import paramiko
@@ -19,6 +25,7 @@ ssh_client2 = paramiko.SSHClient()
 
 def clear_console():
     os.system("cls" if os.name == "nt" else "clear")
+
 
 def display_welcome_msg():
     print(GREEN + "**************************************************************")
@@ -61,6 +68,7 @@ def show_main_menu():
         time.sleep(3)
         quit()
 
+
 def establish_connections():
     global conn_flag
     global ssh_client1
@@ -101,7 +109,6 @@ def establish_connections():
     print()
 
     time.sleep(5)
-
 
     show_main_menu()
 
@@ -147,13 +154,13 @@ def show_roce_menu():
 
     if roce_option == 1:
         clear_console()
-        ib_write_bench()
+        roce_write_bench()
     elif roce_option == 2:
         clear_console()
-        ib_read_bench()
+        roce_read_bench()
     elif roce_option == 3:
         clear_console()
-        ib_lat_bench()
+        roce_lat_bench()
     elif roce_option == 4:
         clear_console()
         print(RED + "You will be taken back to the main menu where you can run the benchmarks." + RESET)
@@ -178,14 +185,13 @@ def ib_write_bench():
         exponent += 1
 
     for size in data_sizes:
-        print(RED + "The benchmark is now running. This might take a while to  complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_bw -d {} -s {}".format(ibw_device, size))
+        print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_bw -d {} -s {} -n 10000".format(ibw_device, size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_bw {} -d {} -s {}".format(host1, ibw_device, size))
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_bw {} -d {} -s {} -n 10000".format(host1, ibw_device, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
-                file.write("Connection Type: InfiniBand\n")
                 file.writelines(stdout.readlines())
 
     clear_console()
@@ -212,14 +218,13 @@ def ib_read_bench():
         exponent += 1
 
     for size in data_sizes:
-        print(RED + "The benchmark is now running. This might take a while to  complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_bw -d {} -s {}".format(ibw_device, size))
+        print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_bw -d {} -s {} -n 10000".format(ibw_device, size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_bw {} -d {} -s {}".format(host1, ibw_device, size))
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_bw {} -d {} -s {} -n 10000".format(host1, ibw_device, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
-                file.write("Connection Type: InfiniBand\n")
                 file.writelines(stdout.readlines())
 
     clear_console()
@@ -246,14 +251,13 @@ def ib_lat_bench():
         exponent += 1
 
     for size in data_sizes:
-        print(RED + "The benchmark is now running. This might take a while to  complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_lat -d {} -s {}".format(ibw_device, size))
+        print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_lat -d {} -s {} -n 10000".format(ibw_device, size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_lat {} -d {} -s {}".format(host1, ibw_device, size))
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_lat {} -d {} -s {} -n 10000".format(host1, ibw_device, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
-                file.write("Connection Type: InfiniBand\n")
                 file.writelines(stdout.readlines())
 
     clear_console()
@@ -280,16 +284,14 @@ def roce_write_bench():
         exponent += 1
 
     for size in data_sizes:
-        print(RED + "The benchmark is now running. This might take a while to  complete!" + RESET)
+        print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
         stdin, stdout, stderr = ssh_client1.exec_command("ib_write_bw -d {} -s {}".format(ibw_device, size))
         while not stdout.channel.exit_status_ready():
-            print("Test")
             time.sleep(5)
             stdin, stdout, stderr = ssh_client2.exec_command(
                 "ib_write_bw {} -d {} -s {}".format(host1, ibw_device, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
-                file.write("Connection Type: RoCE\n")
                 file.writelines(stdout.readlines())
 
     clear_console()
@@ -319,12 +321,10 @@ def roce_read_bench():
         print(RED + "The benchmark is now running. This might take a while to  complete!" + RESET)
         stdin, stdout, stderr = ssh_client1.exec_command("ib_read_bw -d {} -s {}".format(ibw_device, size))
         while not stdout.channel.exit_status_ready():
-            print("Test")
             time.sleep(5)
             stdin, stdout, stderr = ssh_client2.exec_command("ib_read_bw {} -d {} -s {}".format(host1, ibw_device, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
-                file.write("Connection Type: RoCE\n")
                 file.writelines(stdout.readlines())
 
     clear_console()
@@ -358,7 +358,6 @@ def roce_lat_bench():
             stdin, stdout, stderr = ssh_client2.exec_command("ib_write_lat {} -d {} -s {}".format(host1, ibw_device, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
-                file.write("Connection Type: RoCE\n")
                 file.writelines(stdout.readlines())
 
     clear_console()
