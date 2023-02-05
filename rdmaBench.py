@@ -1,7 +1,7 @@
-#                                                               #
-# This tool uses the Perftest package to perform the benchmarks #
-#   For more information, see github.com/linux-rdma/perftest    #
-#                                                               #
+# This tool uses the perftest and qperf packages for the benchmarks #
+#                                                                   #
+#       For more information, see github.com/linux-rdma/qperf       #
+#               and github.com/linux-rdma/perftest                  #
 
 
 import os
@@ -40,12 +40,14 @@ def show_main_menu():
     print("[1] Establish connection to servers")
     print("[2] Run benchmarks for InfiniBand connections")
     print("[3] Run benchmarks for RoCE connections")
-    print("[4] Exit the tool")
+    print("[4] Run benchmarks for TCP connections")
+    print("[5] Run benchmarks for UDP connections")
+    print("[6] Exit the tool")
 
     print()
     option = int(input(BLUE + "Please enter the number of your chosen option: " + RESET))
 
-    if option == 2 or option == 3:
+    if option == 2 or option == 3 or option == 4 or option == 5:
         if conn_flag == 0:
             clear_console()
             print(RED + "You first need to connect to the servers before running benchmarks!" + RESET)
@@ -57,10 +59,16 @@ def show_main_menu():
         elif option == 3:
             clear_console()
             show_roce_menu()
+        elif option == 4:
+            clear_console()
+            show_tcp_menu()
+        elif option == 5:
+            clear_console()
+            show_udp_menu()
     elif option == 1:
         clear_console()
         establish_connections()
-    elif option == 4:
+    elif option == 6:
         print(RED + "You will now exit this tool." + RESET)
         if conn_flag == 1:
             close_connections()
@@ -94,13 +102,13 @@ def establish_connections():
     ssh_client1.set_missing_host_key_policy(paramiko.AutoAddPolicy)
     ssh_client1.connect(hostname=host1, port=22, username=user1, password=pwd1)
     time.sleep(1)
-    print("The connection with server 1 has now been established.")
+    print("The connection with server 1 has been established.")
 
     ssh_client2 = paramiko.SSHClient()
     ssh_client2.set_missing_host_key_policy(paramiko.AutoAddPolicy)
     ssh_client2.connect(hostname=host2, port=22, username=user2, password=pwd2)
     time.sleep(1)
-    print("The connection with server 2 has now been established.")
+    print("The connection with server 2 has been established.")
 
     conn_flag = 1
     time.sleep(1)
@@ -138,7 +146,7 @@ def show_ib_menu():
         ib_lat_bench()
     elif ib_option == 4:
         clear_console()
-        print(RED + "You will be taken back to the main menu where you can run the benchmarks." + RESET)
+        print(RED + "You will be taken back to the main menu." + RESET)
         time.sleep(3)
         show_main_menu()
 
@@ -163,7 +171,49 @@ def show_roce_menu():
         roce_lat_bench()
     elif roce_option == 4:
         clear_console()
-        print(RED + "You will be taken back to the main menu where you can run the benchmarks." + RESET)
+        print(RED + "You will be taken back to the main menu." + RESET)
+        time.sleep(3)
+        show_main_menu()
+
+
+def show_tcp_menu():
+    print("Please select one of the available options: ")
+    print("[1] Run Bandwidth Benchmark (TCP)")
+    print("[2] Run Latency Benchmark (TCP)")
+    print("[3] Return to main menu")
+
+    tcp_option = int(input(BLUE + "Please enter the number of your chosen option: " + RESET))
+
+    if tcp_option == 1:
+        clear_console()
+        tcp_bw_bench()
+    elif tcp_option == 2:
+        clear_console()
+        tcp_lat_bench()
+    elif tcp_option == 3:
+        clear_console()
+        print(RED + "You will be taken back to the main menu." + RESET)
+        time.sleep(3)
+        show_main_menu()
+
+
+def show_udp_menu():
+    print("Please select one of the available options: ")
+    print("[1] Run Bandwidth Benchmark (UDP)")
+    print("[2] Run Latency Benchmark (UDP)")
+    print("[3] Return to main menu")
+
+    tcp_option = int(input(BLUE + "Please enter the number of your chosen option: " + RESET))
+
+    if tcp_option == 1:
+        clear_console()
+        udp_bw_bench()
+    elif tcp_option == 2:
+        clear_console()
+        udp_lat_bench()
+    elif tcp_option == 3:
+        clear_console()
+        print(RED + "You will be taken back to the main menu." + RESET)
         time.sleep(3)
         show_main_menu()
 
@@ -174,10 +224,6 @@ def ib_write_bench():
     data_sizes = []
     exponent = 1
 
-    print("The following devices have been found: ")
-    get_ib_dev_info()
-    print()
-    ibw_device = input(BLUE + "Please enter the name of the device that you want to use for the benchmark: " + RESET)
     data_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
 
     while exponent <= data_size:
@@ -186,18 +232,20 @@ def ib_write_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_bw -d {} -s {} -n 10000".format(ibw_device, size))
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_bw -s {} -n 5000"
+                                                         .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_bw {} -d {} -s {} -n 10000".format(host1, ibw_device, size))
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_bw {} -s {} -n 5000"
+                                                             .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
                 file.writelines(stdout.readlines())
 
     clear_console()
+    print()
     print(GREEN + "The benchmark is now finished. You can find the results in benchmark_results.txt" + RESET)
     print()
-    print(RED + "You will be taken back to the main menu." + RESET)
     show_main_menu()
 
 
@@ -207,10 +255,6 @@ def ib_read_bench():
     data_sizes = []
     exponent = 1
 
-    print("The following devices have been found: ")
-    get_ib_dev_info()
-    print()
-    ibw_device = input(BLUE + "Please enter the name of the device that you want to use for the benchmark: " + RESET)
     data_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
 
     while exponent <= data_size:
@@ -219,18 +263,20 @@ def ib_read_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_bw -d {} -s {} -n 10000".format(ibw_device, size))
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_bw -s {} -n 5000"
+                                                         .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_bw {} -d {} -s {} -n 10000".format(host1, ibw_device, size))
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_bw {} -s {} -n 5000"
+                                                             .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
                 file.writelines(stdout.readlines())
 
     clear_console()
+    print()
     print(GREEN + "The benchmark is now finished. You can find the results in benchmark_results.txt" + RESET)
     print()
-    print(RED + "You will be taken back to the main menu." + RESET)
     show_main_menu()
 
 
@@ -240,10 +286,6 @@ def ib_lat_bench():
     data_sizes = []
     exponent = 1
 
-    print("The following devices have been found: ")
-    get_ib_dev_info()
-    print()
-    ibw_device = input(BLUE + "Please enter the name of the device that you want to use for the benchmark: " + RESET)
     data_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
 
     while exponent <= data_size:
@@ -252,18 +294,20 @@ def ib_lat_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_lat -d {} -s {} -n 10000".format(ibw_device, size))
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_lat -s {} -n 5000"
+                                                         .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_lat {} -d {} -s {} -n 10000".format(host1, ibw_device, size))
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_lat {} -s {} -n 5000"
+                                                             .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
                 file.writelines(stdout.readlines())
 
     clear_console()
+    print()
     print(GREEN + "The benchmark is now finished. You can find the results in benchmark_results.txt" + RESET)
     print()
-    print(RED + "You will be taken back to the main menu." + RESET)
     show_main_menu()
 
 
@@ -273,10 +317,6 @@ def roce_write_bench():
     data_sizes = []
     exponent = 1
 
-    print("The following devices have been found: ")
-    get_ib_dev_info()
-    print()
-    ibw_device = input(BLUE + "Please enter the name of the device that you want to use for the benchmark: " + RESET)
     data_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
 
     while exponent <= data_size:
@@ -285,19 +325,20 @@ def roce_write_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_bw -d {} -s {}".format(ibw_device, size))
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_bw -s {} -n 5000"
+                                                         .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command(
-                "ib_write_bw {} -d {} -s {}".format(host1, ibw_device, size))
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_bw {} -s {} -n 5000"
+                                                             .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
                 file.writelines(stdout.readlines())
 
     clear_console()
+    print()
     print(GREEN + "The benchmark is now finished. You can find the results in benchmark_results.txt" + RESET)
     print()
-    print(RED + "You will be taken back to the main menu." + RESET)
     show_main_menu()
 
 
@@ -307,10 +348,6 @@ def roce_read_bench():
     data_sizes = []
     exponent = 1
 
-    print("The following devices have been found: ")
-    get_ib_dev_info()
-    print()
-    ibw_device = input(BLUE + "Please enter the name of the device that you want to use for the benchmark: " + RESET)
     data_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
 
     while exponent <= data_size:
@@ -318,19 +355,21 @@ def roce_read_bench():
         exponent += 1
 
     for size in data_sizes:
-        print(RED + "The benchmark is now running. This might take a while to  complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_bw -d {} -s {}".format(ibw_device, size))
+        print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_bw -s {} -n 5000"
+                                                         .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_bw {} -d {} -s {}".format(host1, ibw_device, size))
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_bw {} -s {} -n 5000"
+                                                             .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
                 file.writelines(stdout.readlines())
 
     clear_console()
+    print()
     print(GREEN + "The benchmark is now finished. You can find the results in benchmark_results.txt" + RESET)
     print()
-    print(RED + "You will be taken back to the main menu." + RESET)
     show_main_menu()
 
 
@@ -340,10 +379,37 @@ def roce_lat_bench():
     data_sizes = []
     exponent = 1
 
-    print("The following devices have been found: ")
-    get_ib_dev_info()
+    data_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
+
+    while exponent <= data_size:
+        data_sizes.append(2**exponent)
+        exponent += 1
+
+    for size in data_sizes:
+        print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_lat -s {} -n 5000"
+                                                         .format(size))
+        while not stdout.channel.exit_status_ready():
+            time.sleep(5)
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_lat {} -s {} -n 5000"
+                                                             .format(host1, size))
+            with open("benchmark_results.txt", "a") as file:
+                file.write("\n")
+                file.writelines(stdout.readlines())
+
+    clear_console()
     print()
-    ibw_device = input(BLUE + "Please enter the name of the device that you want to use for the benchmark: " + RESET)
+    print(GREEN + "The benchmark is now finished. You can find the results in benchmark_results.txt" + RESET)
+    print()
+    show_main_menu()
+
+
+def tcp_bw_bench():
+    global host1
+
+    data_sizes = []
+    exponent = 1
+
     data_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
 
     while exponent <= data_size:
@@ -352,31 +418,110 @@ def roce_lat_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to  complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_lat -d {} -s {}".format(ibw_device, size))
+        stdin, stdout, stderr = ssh_client1.exec_command("qperf")
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_lat {} -d {} -s {}".format(host1, ibw_device, size))
+            stdin, stdout, stderr = ssh_client2.exec_command("qperf -v -m {} {} tcp_bw quit"
+                                                             .format(size, host1))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
                 file.writelines(stdout.readlines())
 
     clear_console()
+    print()
     print(GREEN + "The benchmark is now finished. You can find the results in benchmark_results.txt" + RESET)
     print()
-    print(RED + "You will be taken back to the main menu." + RESET)
     show_main_menu()
 
 
-def get_ib_dev_info():
-    stdin, stdout, stderr = ssh_client1.exec_command("ibv_devinfo")
-    output = stdout.read().decode()
-    lines = output.split('\n')
+def tcp_lat_bench():
+    global host1
 
-    for line in lines:
-        if line.startswith('hca_id'):
-            parts = line.split(':')
-            hca_id = parts[1].strip()
-            print(hca_id)
+    data_sizes = []
+    exponent = 1
+
+    data_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
+
+    while exponent <= data_size:
+        data_sizes.append(2**exponent)
+        exponent += 1
+
+    for size in data_sizes:
+        print(RED + "The benchmark is now running. This might take a while to  complete!" + RESET)
+        stdin, stdout, stderr = ssh_client1.exec_command("qperf")
+        while not stdout.channel.exit_status_ready():
+            time.sleep(5)
+            stdin, stdout, stderr = ssh_client2.exec_command("qperf -v -m {} {} tcp_lat quit"
+                                                             .format(size, host1))
+            with open("benchmark_results.txt", "a") as file:
+                file.write("\n")
+                file.writelines(stdout.readlines())
+
+    clear_console()
+    print()
+    print(GREEN + "The benchmark is now finished. You can find the results in benchmark_results.txt" + RESET)
+    print()
+    show_main_menu()
+
+
+def udp_bw_bench():
+    global host1
+
+    data_sizes = []
+    exponent = 1
+
+    data_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
+
+    while exponent <= data_size:
+        data_sizes.append(2**exponent)
+        exponent += 1
+
+    for size in data_sizes:
+        print(RED + "The benchmark is now running. This might take a while to  complete!" + RESET)
+        stdin, stdout, stderr = ssh_client1.exec_command("qperf")
+        while not stdout.channel.exit_status_ready():
+            time.sleep(5)
+            stdin, stdout, stderr = ssh_client2.exec_command("qperf -v -m {} {} udp_bw quit"
+                                                             .format(size, host1))
+            with open("benchmark_results.txt", "a") as file:
+                file.write("\n")
+                file.writelines(stdout.readlines())
+
+    clear_console()
+    print()
+    print(GREEN + "The benchmark is now finished. You can find the results in benchmark_results.txt" + RESET)
+    print()
+    show_main_menu()
+
+
+def udp_lat_bench():
+    global host1
+
+    data_sizes = []
+    exponent = 1
+
+    data_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
+
+    while exponent <= data_size:
+        data_sizes.append(2**exponent)
+        exponent += 1
+
+    for size in data_sizes:
+        print(RED + "The benchmark is now running. This might take a while to  complete!" + RESET)
+        stdin, stdout, stderr = ssh_client1.exec_command("qperf")
+        while not stdout.channel.exit_status_ready():
+            time.sleep(5)
+            stdin, stdout, stderr = ssh_client2.exec_command("qperf -v -cm1 -m {} {} udp_lat quit"
+                                                             .format(size, host1))
+            with open("benchmark_results.txt", "a") as file:
+                file.write("\n")
+                file.writelines(stdout.readlines())
+
+    clear_console()
+    print()
+    print(GREEN + "The benchmark is now finished. You can find the results in benchmark_results.txt" + RESET)
+    print()
+    show_main_menu()
 
 
 def main():
