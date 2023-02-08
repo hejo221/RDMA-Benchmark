@@ -41,10 +41,8 @@ def show_main_menu():
     print("[2] Run benchmarks for InfiniBand connections")
     print("[3] Run benchmarks for RoCE connections")
     print("[4] Run benchmarks for TCP connections")
-    print("[5] Run benchmarks for UDP connections")
-    print("[6] Exit the tool")
+    print("[5] Exit the tool")
 
-    print()
     option = int(input(BLUE + "Please enter the number of your chosen option: " + RESET))
 
     if option == 2 or option == 3 or option == 4 or option == 5:
@@ -62,13 +60,10 @@ def show_main_menu():
         elif option == 4:
             clear_console()
             show_tcp_menu()
-        elif option == 5:
-            clear_console()
-            show_udp_menu()
     elif option == 1:
         clear_console()
         establish_connections()
-    elif option == 6:
+    elif option == 5:
         print(RED + "You will now exit this tool." + RESET)
         if conn_flag == 1:
             close_connections()
@@ -197,27 +192,6 @@ def show_tcp_menu():
         show_main_menu()
 
 
-def show_udp_menu():
-    print("Please select one of the available options: ")
-    print("[1] Run Bandwidth Benchmark (UDP)")
-    print("[2] Run Latency Benchmark (UDP)")
-    print("[3] Return to main menu")
-
-    tcp_option = int(input(BLUE + "Please enter the number of your chosen option: " + RESET))
-
-    if tcp_option == 1:
-        clear_console()
-        udp_bw_bench()
-    elif tcp_option == 2:
-        clear_console()
-        udp_lat_bench()
-    elif tcp_option == 3:
-        clear_console()
-        print(RED + "You will be taken back to the main menu." + RESET)
-        time.sleep(3)
-        show_main_menu()
-
-
 def ib_write_bench():
     global host1
 
@@ -232,11 +206,11 @@ def ib_write_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_bw -s {} -n 5000"
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_bw -s {} -n 1000"
                                                          .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_bw {} -s {} -n 5000"
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_bw {} -s {} -n 1000"
                                                              .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
@@ -263,11 +237,11 @@ def ib_read_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_bw -s {} -n 5000"
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_bw -s {} -n 1000"
                                                          .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_bw {} -s {} -n 5000"
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_bw {} -s {} -n 1000"
                                                              .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
@@ -294,11 +268,11 @@ def ib_lat_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_lat -s {} -n 5000"
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_lat -s {} -n 1000"
                                                          .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_lat {} -s {} -n 5000"
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_lat {} -s {} -n 1000"
                                                              .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
@@ -325,11 +299,11 @@ def roce_write_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_bw -s {} -n 5000"
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_bw -s {} -n 1000"
                                                          .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_bw {} -s {} -n 5000"
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_bw {} -s {} -n 1000"
                                                              .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
@@ -356,11 +330,11 @@ def roce_read_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_bw -s {} -n 5000"
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_bw -s {} -n 1000"
                                                          .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_bw {} -s {} -n 5000"
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_bw {} -s {} -n 1000"
                                                              .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
@@ -387,11 +361,11 @@ def roce_lat_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_lat -s {} -n 5000"
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_lat -s {} -n 1000"
                                                          .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_lat {} -s {} -n 5000"
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_lat {} -s {} -n 1000"
                                                              .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
@@ -421,8 +395,8 @@ def tcp_bw_bench():
         stdin, stdout, stderr = ssh_client1.exec_command("qperf")
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("qperf -v -m {} {} tcp_bw quit"
-                                                             .format(size, host1))
+            stdin, stdout, stderr = ssh_client2.exec_command("qperf {} -v -m {} tcp_bw quit"
+                                                             .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
                 file.writelines(stdout.readlines())
@@ -451,68 +425,8 @@ def tcp_lat_bench():
         stdin, stdout, stderr = ssh_client1.exec_command("qperf")
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("qperf -v -m {} {} tcp_lat quit"
-                                                             .format(size, host1))
-            with open("benchmark_results.txt", "a") as file:
-                file.write("\n")
-                file.writelines(stdout.readlines())
-
-    clear_console()
-    print()
-    print(GREEN + "The benchmark is now finished. You can find the results in benchmark_results.txt" + RESET)
-    print()
-    show_main_menu()
-
-
-def udp_bw_bench():
-    global host1
-
-    data_sizes = []
-    exponent = 1
-
-    data_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
-
-    while exponent <= data_size:
-        data_sizes.append(2**exponent)
-        exponent += 1
-
-    for size in data_sizes:
-        print(RED + "The benchmark is now running. This might take a while to  complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("qperf")
-        while not stdout.channel.exit_status_ready():
-            time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("qperf -v -m {} {} udp_bw quit"
-                                                             .format(size, host1))
-            with open("benchmark_results.txt", "a") as file:
-                file.write("\n")
-                file.writelines(stdout.readlines())
-
-    clear_console()
-    print()
-    print(GREEN + "The benchmark is now finished. You can find the results in benchmark_results.txt" + RESET)
-    print()
-    show_main_menu()
-
-
-def udp_lat_bench():
-    global host1
-
-    data_sizes = []
-    exponent = 1
-
-    data_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
-
-    while exponent <= data_size:
-        data_sizes.append(2**exponent)
-        exponent += 1
-
-    for size in data_sizes:
-        print(RED + "The benchmark is now running. This might take a while to  complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("qperf")
-        while not stdout.channel.exit_status_ready():
-            time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("qperf -v -cm1 -m {} {} udp_lat quit"
-                                                             .format(size, host1))
+            stdin, stdout, stderr = ssh_client2.exec_command("qperf {} -v -m {} tcp_lat quit"
+                                                             .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
                 file.writelines(stdout.readlines())
