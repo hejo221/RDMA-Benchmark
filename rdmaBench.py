@@ -151,7 +151,8 @@ def show_roce_menu():
     print("[1] Run Write Bandwidth Benchmark (RoCE)")
     print("[2] Run Read Bandwidth Benchmark (RoCE)")
     print("[3] Run Latency Benchmark (RoCE)")
-    print("[4] Return to main menu")
+    print("[4] Run Benchmark for different buffer sizes [RoCE]")
+    print("[5] Return to main menu")
 
     roce_option = int(input(BLUE + "Please enter the number of your chosen option: " + RESET))
 
@@ -165,6 +166,9 @@ def show_roce_menu():
         clear_console()
         roce_lat_bench()
     elif roce_option == 4:
+        clear_console()
+        roce_buffer_bench()
+    elif roce_option == 5:
         clear_console()
         print(RED + "You will be taken back to the main menu." + RESET)
         time.sleep(3)
@@ -206,11 +210,11 @@ def ib_write_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_bw -s {} -n 1000"
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_bw -s {} -n 20"
                                                          .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_bw {} -s {} -n 1000"
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_bw {} -s {} -n 20"
                                                              .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
@@ -237,11 +241,11 @@ def ib_read_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_bw -s {} -n 1000"
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_bw -s {} -n 20"
                                                          .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_bw {} -s {} -n 1000"
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_bw {} -s {} -n 20"
                                                              .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
@@ -268,11 +272,11 @@ def ib_lat_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_lat -s {} -n 1000"
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_lat -s {} -n 20"
                                                          .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_lat {} -s {} -n 1000"
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_lat {} -s {} -n 20"
                                                              .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
@@ -299,11 +303,11 @@ def roce_write_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_bw -s {} -n 1000"
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_write_bw -s {} -n 20"
                                                          .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_bw {} -s {} -n 1000"
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_write_bw {} -s {} -n 20"
                                                              .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
@@ -330,11 +334,43 @@ def roce_read_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_bw -s {} -n 1000"
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_bw -s {} -n 20"
                                                          .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_bw {} -s {} -n 1000"
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_bw {} -s {} -n 20"
+                                                             .format(host1, size))
+            with open("benchmark_results.txt", "a") as file:
+                file.write("\n")
+                file.writelines(stdout.readlines())
+
+    clear_console()
+    print()
+    print(GREEN + "The benchmark is now finished. You can find the results in benchmark_results.txt" + RESET)
+    print()
+    show_main_menu()
+
+
+def roce_buffer_bench():
+    global host1
+
+    data_sizes = []
+    exponent = 1
+
+    data_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
+
+    while exponent <= data_size:
+        data_sizes.append(2**exponent)
+        exponent += 1
+
+    for size in data_sizes:
+        print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
+        ssh_client1.exec_command("cd Code")
+        ssh_client2.exec_command("cd Code")
+        stdin, stdout, stderr = ssh_client2.exec_command("roce_server")
+        while not stdout.channel.exit_status_ready():
+            time.sleep(5)
+            stdin, stdout, stderr = ssh_client1.exec_command("roce_client -a {} -p 4791 -s {}"
                                                              .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
@@ -361,11 +397,11 @@ def roce_lat_bench():
 
     for size in data_sizes:
         print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_lat -s {} -n 1000"
+        stdin, stdout, stderr = ssh_client1.exec_command("ib_read_lat -s {} -n 20"
                                                          .format(size))
         while not stdout.channel.exit_status_ready():
             time.sleep(5)
-            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_lat {} -s {} -n 1000"
+            stdin, stdout, stderr = ssh_client2.exec_command("ib_read_lat {} -s {} -n 20"
                                                              .format(host1, size))
             with open("benchmark_results.txt", "a") as file:
                 file.write("\n")
