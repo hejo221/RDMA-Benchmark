@@ -354,27 +354,36 @@ def roce_read_bench():
 def roce_buffer_bench():
     global host1
 
-    data_sizes = []
+    buf_sizes = []
+    msg_sizes = []
     exponent = 1
 
-    data_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
+    buf_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the buffer size: " + RESET))
+    msg_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
 
-    while exponent <= data_size:
-        data_sizes.append(2**exponent)
+    while exponent <= buf_size:
+        buf_sizes.append(2**exponent)
         exponent += 1
 
-    for size in data_sizes:
-        print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-        ssh_client1.exec_command("cd Code")
-        ssh_client2.exec_command("cd Code")
-        stdin, stdout, stderr = ssh_client2.exec_command("roce_server")
-        while not stdout.channel.exit_status_ready():
-            time.sleep(5)
-            stdin, stdout, stderr = ssh_client1.exec_command("roce_client -a {} -p 4791 -s {}"
-                                                             .format(host1, size))
-            with open("benchmark_results.txt", "a") as file:
-                file.write("\n")
-                file.writelines(stdout.readlines())
+    exponent = 1
+
+    while exponent <= msg_size:
+        msg_sizes.append(2**exponent)
+        exponent += 1
+
+    for buf_size in buf_sizes:
+        for msg_size in msg_sizes:
+            print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
+            ssh_client1.exec_command("cd Code")
+            ssh_client2.exec_command("cd Code")
+            stdin, stdout, stderr = ssh_client2.exec_command("./roce_server")
+            while not stdout.channel.exit_status_ready():
+                time.sleep(5)
+                stdin, stdout, stderr = ssh_client1.exec_command("./roce_client -a {} -p 4791 -s {} -b {}"
+                                                                 .format(host1, "a" * msg_size, buf_size))
+                with open("benchmark_results.txt", "a") as file:
+                    file.write("\n")
+                    file.writelines(stdout.readlines())
 
     clear_console()
     print()
