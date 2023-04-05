@@ -6,6 +6,7 @@
 
 import os
 import time
+import socket
 import paramiko
 
 os.system("")
@@ -43,33 +44,37 @@ def show_main_menu():
     print("[4] Run benchmarks for TCP connections")
     print("[5] Exit the tool")
 
-    option = int(input(BLUE + "Please enter the number of your chosen option: " + RESET))
-
-    if option == 2 or option == 3 or option == 4 or option == 5:
-        if conn_flag == 0:
-            clear_console()
-            print(RED + "You first need to connect to the servers before running benchmarks!" + RESET)
-            print()
-            show_main_menu()
-        elif option == 2:
-            clear_console()
-            show_ib_menu()
-        elif option == 3:
-            clear_console()
-            show_roce_menu()
-        elif option == 4:
-            clear_console()
-            show_tcp_menu()
-    elif option == 1:
-        clear_console()
-        establish_connections()
-    elif option == 5:
-        print(RED + "You will now exit this tool." + RESET)
-        if conn_flag == 1:
-            close_connections()
-        conn_flag = 0
-        time.sleep(3)
-        quit()
+    while True:
+        try:
+            option = int(input(BLUE + "Please enter the number of your chosen option: " + RESET))
+            if option == 2 or option == 3 or option == 4:
+                if conn_flag == 0:
+                    clear_console()
+                    print(RED + "You first need to connect to the servers before running benchmarks! \n" + RESET)
+                    show_main_menu()
+                elif option == 2:
+                    clear_console()
+                    show_ib_menu()
+                elif option == 3:
+                    clear_console()
+                    show_roce_menu()
+                elif option == 4:
+                    clear_console()
+                    show_tcp_menu()
+            elif option == 1:
+                clear_console()
+                establish_connections()
+            elif option == 5:
+                print(RED + "You will now exit this tool." + RESET)
+                if conn_flag == 1:
+                    close_connections()
+                conn_flag = 0
+                time.sleep(3)
+                quit()
+            else:
+                raise ValueError(RED + "Option must be 1, 2, 3, 4 or 5" + RESET)
+        except ValueError as e:
+            print(f"{e}")
 
 
 def establish_connections():
@@ -81,37 +86,42 @@ def establish_connections():
 
     print("You will now establish connections to the servers:")
 
-    host1 = input("Enter the IP address of server 1: ")
-    user1 = input("Enter your username on server 1: ")
-    pwd1 = input("Enter your password on server 1: ")
+    while True:
+        try:
+            host1 = input("Enter the IP address of server 1: ")
+            user1 = input("Enter your username on server 1: ")
+            pwd1 = input("Enter your password on server 1: ")
+            print()
 
-    print()
+            host2 = input("Enter the IP address of server 2: ")
+            user2 = input("Enter your username on server 2: ")
+            pwd2 = input("Enter your password on server 2: ")
+            print()
 
-    host2 = input("Enter the IP address of server 2: ")
-    user2 = input("Enter your username on server 2: ")
-    pwd2 = input("Enter your password on server 2: ")
+            ssh_client1 = paramiko.SSHClient()
+            ssh_client1.set_missing_host_key_policy(paramiko.AutoAddPolicy)
+            ssh_client1.connect(hostname=host1, port=22, username=user1, password=pwd1)
+            time.sleep(1)
+            print("The connection with server 1 has been established")
 
-    print()
+            ssh_client2 = paramiko.SSHClient()
+            ssh_client2.set_missing_host_key_policy(paramiko.AutoAddPolicy)
+            ssh_client2.connect(hostname=host2, port=22, username=user2, password=pwd2)
+            time.sleep(1)
+            print("The connection with server 2 has been established")
 
-    ssh_client1 = paramiko.SSHClient()
-    ssh_client1.set_missing_host_key_policy(paramiko.AutoAddPolicy)
-    ssh_client1.connect(hostname=host1, port=22, username=user1, password=pwd1)
-    time.sleep(1)
-    print("The connection with server 1 has been established.")
-
-    ssh_client2 = paramiko.SSHClient()
-    ssh_client2.set_missing_host_key_policy(paramiko.AutoAddPolicy)
-    ssh_client2.connect(hostname=host2, port=22, username=user2, password=pwd2)
-    time.sleep(1)
-    print("The connection with server 2 has been established.")
+            break
+        except (paramiko.ssh_exception.SSHException, socket.error, UnicodeDecodeError):
+            clear_console()
+            print(RED + "Authenticaton failed, please try to connect to the servers again \n" + RESET)
+            continue
 
     conn_flag = 1
     time.sleep(1)
 
-    print(RED + "You will be taken back to the main menu where you can run the benchmarks." + RESET)
-    print()
+    print(RED + "\nYou will be taken back to the main menu where you can run the benchmarks\n" + RESET)
 
-    time.sleep(5)
+    time.sleep(3)
 
     show_main_menu()
 
@@ -128,22 +138,27 @@ def show_ib_menu():
     print("[3] Run Latency Benchmark (InfiniBand)")
     print("[4] Return to main menu")
 
-    ib_option = int(input(BLUE + "Please enter the number of your chosen option: " + RESET))
-
-    if ib_option == 1:
-        clear_console()
-        ib_write_bench()
-    elif ib_option == 2:
-        clear_console()
-        ib_read_bench()
-    elif ib_option == 3:
-        clear_console()
-        ib_lat_bench()
-    elif ib_option == 4:
-        clear_console()
-        print(RED + "You will be taken back to the main menu." + RESET)
-        time.sleep(3)
-        show_main_menu()
+    while True:
+        try:
+            ib_option = int(input(BLUE + "Please enter the number of your chosen option: " + RESET))
+            if ib_option == 1:
+                clear_console()
+                ib_write_bench()
+            elif ib_option == 2:
+                clear_console()
+                ib_read_bench()
+            elif ib_option == 3:
+                clear_console()
+                ib_lat_bench()
+            elif ib_option == 4:
+                clear_console()
+                print(RED + "You will be taken back to the main menu." + RESET)
+                time.sleep(3)
+                show_main_menu()
+            else:
+                raise ValueError(RED + "Option must be 1, 2, 3 or 4" + RESET)
+        except ValueError as e:
+            print(f"{e}")
 
 
 def show_roce_menu():
@@ -151,28 +166,33 @@ def show_roce_menu():
     print("[1] Run Write Bandwidth Benchmark (RoCE)")
     print("[2] Run Read Bandwidth Benchmark (RoCE)")
     print("[3] Run Latency Benchmark (RoCE)")
-    print("[4] Run Benchmark for different buffer sizes [RoCE]")
+    print("[4] Run a custom implementation of a Write and Read Bandwidth (RoCE)")
     print("[5] Return to main menu")
 
-    roce_option = int(input(BLUE + "Please enter the number of your chosen option: " + RESET))
-
-    if roce_option == 1:
-        clear_console()
-        roce_write_bench()
-    elif roce_option == 2:
-        clear_console()
-        roce_read_bench()
-    elif roce_option == 3:
-        clear_console()
-        roce_lat_bench()
-    elif roce_option == 4:
-        clear_console()
-        roce_buffer_bench()
-    elif roce_option == 5:
-        clear_console()
-        print(RED + "You will be taken back to the main menu." + RESET)
-        time.sleep(3)
-        show_main_menu()
+    while True:
+        try:
+            roce_option = int(input(BLUE + "Please enter the number of your chosen option: " + RESET))
+            if roce_option == 1:
+                clear_console()
+                roce_write_bench()
+            elif roce_option == 2:
+                clear_console()
+                roce_read_bench()
+            elif roce_option == 3:
+                clear_console()
+                roce_lat_bench()
+            elif roce_option == 4:
+                clear_console()
+                roce_custom_bench()
+            elif roce_option == 5:
+                clear_console()
+                print(RED + "You will be taken back to the main menu." + RESET)
+                time.sleep(3)
+                show_main_menu()
+            else:
+                raise ValueError(RED + "Option must be 1, 2, 3, 4 or 5" + RESET)
+        except ValueError as e:
+            print(f"{e}")
 
 
 def show_tcp_menu():
@@ -181,19 +201,24 @@ def show_tcp_menu():
     print("[2] Run Latency Benchmark (TCP)")
     print("[3] Return to main menu")
 
-    tcp_option = int(input(BLUE + "Please enter the number of your chosen option: " + RESET))
-
-    if tcp_option == 1:
-        clear_console()
-        tcp_bw_bench()
-    elif tcp_option == 2:
-        clear_console()
-        tcp_lat_bench()
-    elif tcp_option == 3:
-        clear_console()
-        print(RED + "You will be taken back to the main menu." + RESET)
-        time.sleep(3)
-        show_main_menu()
+    while True:
+        try:
+            tcp_option = int(input(BLUE + "Please enter the number of your chosen option: " + RESET))
+            if tcp_option == 1:
+                clear_console()
+                tcp_bw_bench()
+            elif tcp_option == 2:
+                clear_console()
+                tcp_lat_bench()
+            elif tcp_option == 3:
+                clear_console()
+                print(RED + "You will be taken back to the main menu." + RESET)
+                time.sleep(3)
+                show_main_menu()
+            else:
+                raise ValueError(RED + "Option must 1, 2 or 3" + RESET)
+        except ValueError as e:
+            print(f"{e}")
 
 
 def ib_write_bench():
@@ -351,39 +376,29 @@ def roce_read_bench():
     show_main_menu()
 
 
-def roce_buffer_bench():
+def roce_custom_bench():
     global host1
 
-    buf_sizes = []
-    msg_sizes = []
+    data_sizes = []
     exponent = 1
 
-    buf_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the buffer size: " + RESET))
-    msg_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
+    data_size = int(input(BLUE + "Please enter the maximum exponent to the base 2 for the payload size: " + RESET))
 
-    while exponent <= buf_size:
-        buf_sizes.append(2**exponent)
+    while exponent <= data_size:
+        data_sizes.append(2**exponent)
         exponent += 1
 
-    exponent = 1
+    for size in data_sizes:
+        print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
 
-    while exponent <= msg_size:
-        msg_sizes.append(2**exponent)
-        exponent += 1
-
-    for buf_size in buf_sizes:
-        for msg_size in msg_sizes:
-            print(RED + "The benchmark is now running. This might take a while to complete!" + RESET)
-            ssh_client1.exec_command("cd Code")
-            ssh_client2.exec_command("cd Code")
-            stdin, stdout, stderr = ssh_client2.exec_command("./roce_server")
-            while not stdout.channel.exit_status_ready():
-                time.sleep(5)
-                stdin, stdout, stderr = ssh_client1.exec_command("./roce_client -a {} -p 4791 -s {} -b {}"
-                                                                 .format(host1, "a" * msg_size, buf_size))
-                with open("benchmark_results.txt", "a") as file:
-                    file.write("\n")
-                    file.writelines(stdout.readlines())
+        stdin, stdout, stderr = ssh_client1.exec_command("./Code/roce_server")
+        while not stdout.channel.exit_status_ready():
+            time.sleep(5)
+            stdin, stdout, stderr = ssh_client2.exec_command("./Code/roce_client -a {} -s {}"
+                                                             .format(host1, size))
+            with open("benchmark_results.txt", "a") as file:
+                file.write("\n")
+                file.writelines(stdout.readlines())
 
     clear_console()
     print()
