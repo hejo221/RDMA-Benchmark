@@ -10,5 +10,6 @@
 #### How to run
 
 - Open the terminal and navigate to the path where rdmaBench.py is located
+- Depending on the path where rdmaBench.py is located, the path indicated in the command in lines 394 and 397 may need to be adjusted
 - Start rdmaBench.py by using the respective command (on Unix run **_python3 rdmaBench.py_**)
 - If not already existing a text file named **_benchmark_results.txt_** will be created that contains all the benchmark results
